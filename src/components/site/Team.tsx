@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import useEmblaCarousel from "embla-carousel-react";
 import { motion } from "motion/react";
 import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { SectionLabel } from "./SectionLabel";
@@ -75,25 +76,33 @@ const seats: Seat[] = [
 ];
 
 export function Team() {
-  const [index, setIndex] = useState(0);
-  const [visible, setVisible] = useState(1);
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: "start",
+    containScroll: "trimSnaps",
+    loop: false,
+    duration: 28,
+  });
+  const [selected, setSelected] = useState(0);
+  const [snapCount, setSnapCount] = useState(0);
 
   useEffect(() => {
-    const update = () => {
-      if (window.matchMedia("(min-width: 1024px)").matches) setVisible(3);
-      else if (window.matchMedia("(min-width: 640px)").matches) setVisible(2);
-      else setVisible(1);
+    if (!emblaApi) return;
+    const onSelect = () => setSelected(emblaApi.selectedScrollSnap());
+    const onReinit = () => {
+      setSnapCount(emblaApi.scrollSnapList().length);
+      onSelect();
     };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onReinit);
+    onReinit();
+    return () => {
+      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", onReinit);
+    };
+  }, [emblaApi]);
 
-  const maxIndex = Math.max(0, seats.length - visible);
-  const safeIndex = Math.min(index, maxIndex);
-
-  const prev = () => setIndex((i) => Math.max(0, i - 1));
-  const next = () => setIndex((i) => Math.min(maxIndex, i + 1));
+  const prev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const next = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
   return (
     <section id="team" className="relative py-28 md:py-36">
@@ -119,22 +128,26 @@ export function Team() {
           </p>
         </div>
 
-        {/* Carousel header — counter + nav */}
+        {/* Carousel header */}
         <div className="mt-12 flex items-center justify-between">
           <p className="font-display text-[14px] tracking-[0.3em] text-[var(--color-ink-dim)]">
             <span className="text-[var(--color-champagne)]">
-              {String(safeIndex + 1).padStart(2, "0")}
+              {String(selected + 1).padStart(2, "0")}
             </span>
             <span className="mx-2 text-[var(--color-line-strong)]">/</span>
             <span>{String(seats.length).padStart(2, "0")}</span>
           </p>
           <div className="flex items-center gap-2">
-            <CarouselButton onClick={prev} disabled={safeIndex === 0} label="Previous">
+            <CarouselButton
+              onClick={prev}
+              disabled={selected === 0}
+              label="Previous"
+            >
               <ArrowLeft size={16} />
             </CarouselButton>
             <CarouselButton
               onClick={next}
-              disabled={safeIndex === maxIndex}
+              disabled={selected >= snapCount - 1}
               label="Next"
             >
               <ArrowRight size={16} />
@@ -142,18 +155,13 @@ export function Team() {
           </div>
         </div>
 
-        {/* Track */}
-        <div className="relative mt-6 overflow-hidden">
-          <div
-            className="flex transition-transform duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-            style={{
-              transform: `translateX(calc(-${safeIndex} * (100% / ${visible})))`,
-            }}
-          >
+        {/* Embla viewport */}
+        <div className="relative mt-6 overflow-hidden" ref={emblaRef}>
+          <div className="flex">
             {seats.map((s, i) => (
               <div
                 key={s.name}
-                className="w-full shrink-0 px-3 sm:w-1/2 lg:w-1/3"
+                className="min-w-0 shrink-0 basis-full px-3 sm:basis-1/2 lg:basis-1/3"
               >
                 <TeamSeat {...s} index={i} />
               </div>
@@ -163,14 +171,14 @@ export function Team() {
 
         {/* Dots */}
         <div className="mt-8 flex items-center justify-center gap-2">
-          {Array.from({ length: maxIndex + 1 }).map((_, i) => (
+          {Array.from({ length: snapCount }).map((_, i) => (
             <button
               key={i}
-              onClick={() => setIndex(i)}
+              onClick={() => emblaApi?.scrollTo(i)}
               aria-label={`Go to slide ${i + 1}`}
               className={cn(
                 "h-[3px] rounded-full transition-all duration-500",
-                i === safeIndex
+                i === selected
                   ? "w-10 bg-[var(--color-champagne)]"
                   : "w-5 bg-[var(--color-line-strong)] hover:bg-[var(--color-ink-dim)]",
               )}
@@ -209,7 +217,7 @@ function CarouselButton({
       disabled={disabled}
       aria-label={label}
       className={cn(
-        "group grid h-11 w-11 place-items-center rounded-full border transition-all duration-300",
+        "grid h-11 w-11 place-items-center rounded-full border transition-all duration-300",
         disabled
           ? "cursor-not-allowed border-[var(--color-line)] text-[var(--color-ink-dim)]"
           : "border-[var(--color-line-strong)] text-[var(--color-ink)] hover:border-[var(--color-champagne)]/60 hover:bg-[var(--color-champagne)]/[0.06] hover:text-[var(--color-champagne)]",

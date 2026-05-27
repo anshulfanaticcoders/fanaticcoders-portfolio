@@ -1,19 +1,29 @@
 "use client";
 
 import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
+import useEmblaCarousel from "embla-carousel-react";
 import { motion } from "motion/react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { SectionLabel } from "./SectionLabel";
 import { Button } from "./Button";
+import { cn } from "@/lib/utils";
 
-const cases = [
+type Case = {
+  label: string;
+  discipline: string;
+  summary: string;
+  accent: "champagne" | "cyan";
+  cover: string;
+};
+
+const cases: Case[] = [
   {
     label: "Luxury Brand Platform",
     discipline: "Design · Next.js · Supabase",
     summary:
       "A multi-surface marketing and editorial platform for a luxury hospitality group.",
-    accent: "champagne" as const,
-    // Luxury hotel lobby / hospitality interior
+    accent: "champagne",
     cover:
       "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1200&h=750&fit=crop&auto=format&q=80",
   },
@@ -22,8 +32,7 @@ const cases = [
     discipline: "Programmatic SEO · Content Ops",
     summary:
       "Templated landing architecture for a 400-city service business — built to scale rankings, not bloat.",
-    accent: "cyan" as const,
-    // Analytics dashboard / charts
+    accent: "cyan",
     cover:
       "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=750&fit=crop&auto=format&q=80",
   },
@@ -32,8 +41,7 @@ const cases = [
     discipline: "WordPress · ACF · Headless",
     summary:
       "Editorial WordPress with a bespoke block library, headless previews, and Lighthouse 95+.",
-    accent: "champagne" as const,
-    // Editorial magazine layout / typography
+    accent: "champagne",
     cover:
       "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&h=750&fit=crop&auto=format&q=80",
   },
@@ -42,14 +50,42 @@ const cases = [
     discipline: "Next.js · Supabase · RLS",
     summary:
       "Internal CMS for a media team — roles, uploads, audit, and a quiet, fast editing experience.",
-    accent: "cyan" as const,
-    // Code editor / dashboard UI on screen
+    accent: "cyan",
     cover:
       "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=750&fit=crop&auto=format&q=80",
   },
 ];
 
 export function Work() {
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: "start",
+    containScroll: "trimSnaps",
+    loop: false,
+    dragFree: false,
+    duration: 28,
+  });
+  const [selected, setSelected] = useState(0);
+  const [snapCount, setSnapCount] = useState(0);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => setSelected(emblaApi.selectedScrollSnap());
+    const onReinit = () => {
+      setSnapCount(emblaApi.scrollSnapList().length);
+      onSelect();
+    };
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onReinit);
+    onReinit();
+    return () => {
+      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", onReinit);
+    };
+  }, [emblaApi]);
+
+  const prev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const next = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
   return (
     <section
       id="work"
@@ -72,9 +108,61 @@ export function Work() {
           </p>
         </div>
 
-        <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-2">
-          {cases.map((c, i) => (
-            <WorkCard key={c.label} {...c} index={i} />
+        {/* Carousel header */}
+        <div className="mt-12 flex items-center justify-between">
+          <p className="font-display text-[14px] tracking-[0.3em] text-[var(--color-ink-dim)]">
+            <span className="text-[var(--color-champagne)]">
+              {String(selected + 1).padStart(2, "0")}
+            </span>
+            <span className="mx-2 text-[var(--color-line-strong)]">/</span>
+            <span>{String(cases.length).padStart(2, "0")}</span>
+          </p>
+          <div className="flex items-center gap-2">
+            <CarouselButton
+              onClick={prev}
+              disabled={selected === 0}
+              label="Previous case"
+            >
+              <ArrowLeft size={16} />
+            </CarouselButton>
+            <CarouselButton
+              onClick={next}
+              disabled={selected >= snapCount - 1}
+              label="Next case"
+            >
+              <ArrowRight size={16} />
+            </CarouselButton>
+          </div>
+        </div>
+
+        {/* Embla viewport */}
+        <div className="mt-6 overflow-hidden" ref={emblaRef}>
+          <div className="flex gap-6">
+            {cases.map((c, i) => (
+              <div
+                key={c.label}
+                className="min-w-0 shrink-0 basis-[88%] sm:basis-[60%] lg:basis-[47%]"
+              >
+                <WorkCard {...c} index={i} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Dots */}
+        <div className="mt-8 flex items-center justify-center gap-2">
+          {Array.from({ length: snapCount }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => emblaApi?.scrollTo(i)}
+              aria-label={`Go to case ${i + 1}`}
+              className={cn(
+                "h-[3px] rounded-full transition-all duration-500",
+                i === selected
+                  ? "w-10 bg-[var(--color-champagne)]"
+                  : "w-5 bg-[var(--color-line-strong)] hover:bg-[var(--color-ink-dim)]",
+              )}
+            />
           ))}
         </div>
 
@@ -92,6 +180,35 @@ export function Work() {
   );
 }
 
+function CarouselButton({
+  onClick,
+  disabled,
+  children,
+  label,
+}: {
+  onClick: () => void;
+  disabled: boolean;
+  children: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={cn(
+        "grid h-11 w-11 place-items-center rounded-full border transition-all duration-300",
+        disabled
+          ? "cursor-not-allowed border-[var(--color-line)] text-[var(--color-ink-dim)]"
+          : "border-[var(--color-line-strong)] text-[var(--color-ink)] hover:border-[var(--color-champagne)]/60 hover:bg-[var(--color-champagne)]/[0.06] hover:text-[var(--color-champagne)]",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 function WorkCard({
   label,
   discipline,
@@ -99,7 +216,7 @@ function WorkCard({
   accent,
   cover,
   index,
-}: (typeof cases)[number] & { index: number }) {
+}: Case & { index: number }) {
   const accentColor =
     accent === "cyan" ? "var(--color-cyan)" : "var(--color-champagne)";
 
@@ -108,7 +225,7 @@ function WorkCard({
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.7, delay: index * 0.08 }}
+      transition={{ duration: 0.7 }}
       className="group relative overflow-hidden rounded-3xl border border-[var(--color-line-strong)] bg-[var(--color-canvas-soft)] transition-all duration-500 hover:border-[var(--color-champagne)]/40 hover:shadow-[0_30px_80px_-40px_rgba(215,181,109,0.35)]"
     >
       {/* visual */}
@@ -117,11 +234,10 @@ function WorkCard({
           src={cover}
           alt={`${label} cover preview`}
           fill
-          sizes="(min-width: 768px) 50vw, 100vw"
+          sizes="(min-width: 1024px) 47vw, (min-width: 640px) 60vw, 88vw"
           className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
           unoptimized
         />
-        {/* dark gradient for legibility */}
         <div
           aria-hidden
           className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,5,6,0.35)_0%,rgba(5,5,6,0.72)_100%)]"
@@ -139,7 +255,7 @@ function WorkCard({
         />
         <div className="absolute inset-0 flex items-end justify-between p-6">
           <span
-            className="font-display text-[120px] font-light leading-none tracking-[-0.04em] text-white/[0.18] [text-shadow:0_2px_18px_rgba(0,0,0,0.4)]"
+            className="font-display text-[120px] font-light leading-none tracking-[-0.04em] text-white/[0.18] transition-[color,text-shadow] duration-[600ms] ease-out [text-shadow:0_2px_18px_rgba(0,0,0,0.4)] group-hover:text-[var(--color-champagne)]/55 group-hover:[text-shadow:0_2px_40px_rgba(215,181,109,0.55)]"
             aria-hidden
           >
             0{index + 1}
