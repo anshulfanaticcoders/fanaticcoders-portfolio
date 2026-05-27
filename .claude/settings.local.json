@@ -12,7 +12,9 @@
       "Bash(npm run build:*)",
       "Bash(npm run lint:*)",
       "Bash(npm run typecheck:*)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000)",
+      "Bash(node qa/inspect2.mjs)"
     ]
   },
   "enableAllProjectMcpServers": true,
