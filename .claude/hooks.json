@@ -1,0 +1,5 @@
+{
+  "$schema": "https://claude.ai/api/hooks-schema.json",
+  "note": "Legacy reference only. Active Claude Code hooks are configured in .claude/settings.json.",
+  "activeConfig": ".claude/settings.json"
+}

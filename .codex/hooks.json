@@ -1,0 +1,62 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node 'C:\\Users\\Anshul\\OneDrive\\Desktop\\portfolio\\.codex\\hooks\\session-context.cjs'",
+            "timeout": 5,
+            "statusMessage": "Loading FanaticCoders context"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node 'C:\\Users\\Anshul\\OneDrive\\Desktop\\portfolio\\.codex\\hooks\\task-router.cjs'",
+            "timeout": 5,
+            "statusMessage": "Routing FanaticCoders task"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node 'C:\\Users\\Anshul\\OneDrive\\Desktop\\portfolio\\.codex\\hooks\\safety-guard.cjs'",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node 'C:\\Users\\Anshul\\OneDrive\\Desktop\\portfolio\\.codex\\hooks\\safety-guard.cjs'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node 'C:\\Users\\Anshul\\OneDrive\\Desktop\\portfolio\\.codex\\hooks\\stop-check.cjs'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
