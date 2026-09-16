@@ -1,104 +1,132 @@
 "use client";
 
-import { motion } from "motion/react";
-import { Compass, PenTool, Hammer, LineChart } from "lucide-react";
-import { SectionLabel } from "./SectionLabel";
+import { useEffect, useRef } from "react";
+import Image from "next/image";
+import { gsap } from "@/lib/gsap";
+import { process } from "@/content/site";
 
-const steps = [
-  {
-    icon: Compass,
-    title: "Discover",
-    copy: "We map the business, audience, and constraints before sketching pixels. The brief becomes a thesis.",
-    deliverables: ["Audit", "Strategy", "Roadmap"],
-  },
-  {
-    icon: PenTool,
-    title: "Design",
-    copy: "We move from raw ideas into typography, motion, and systems — refined in shared, reviewable surfaces.",
-    deliverables: ["Identity", "UI System", "Prototypes"],
-  },
-  {
-    icon: Hammer,
-    title: "Develop",
-    copy: "Engineering with type-safety, accessibility, and craft. Built to be edited, not feared.",
-    deliverables: ["Frontend", "Backend", "CMS"],
-  },
-  {
-    icon: LineChart,
-    title: "Optimize",
-    copy: "We instrument, tune, and grow what we shipped — speed, search, conversion, content.",
-    deliverables: ["SEO", "Analytics", "Iterate"],
-  },
-];
+/** Splits text into word spans so GSAP can stagger them. */
+function Words({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/\s+/).map((w, i) => (
+        <span key={i}>
+          <span className="word">{w}</span>{" "}
+        </span>
+      ))}
+    </>
+  );
+}
 
 export function Process() {
-  return (
-    <section id="process" className="relative py-28 md:py-36">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="grid grid-cols-12 gap-8">
-          <div className="col-span-12 md:col-span-5">
-            <SectionLabel>Process</SectionLabel>
-            <h2 className="mt-5 font-display text-[clamp(2.2rem,4.4vw,3.6rem)] font-light leading-[1.05] tracking-[-0.02em]">
-              A delivery rhythm built for
-              <span className="italic text-[var(--color-champagne)]">
-                {" serious work."}
-              </span>
-            </h2>
-          </div>
-          <p className="col-span-12 max-w-lg self-end text-[15px] leading-[1.7] text-[var(--color-ink-muted)] md:col-span-6 md:col-start-7">
-            Four phases, transparent at every step. You see the strategy, the
-            files, the metrics, and the trade-offs — not a black box.
-          </p>
-        </div>
+  const pinRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
 
-        <ol className="relative mt-16 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {/* Connecting line */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute left-0 right-0 top-[64px] hidden h-px bg-gradient-to-r from-transparent via-[var(--color-line-strong)] to-transparent lg:block"
-          />
+  useEffect(() => {
+    const pin = pinRef.current;
+    const track = trackRef.current;
+    if (!pin || !track) return;
 
-          {steps.map((step, i) => {
-            const Icon = step.icon;
-            return (
-              <motion.li
-                key={step.title}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-80px" }}
-                transition={{ duration: 0.6, delay: i * 0.08 }}
-                className="relative"
-              >
-                <div className="relative z-10 mb-6 flex items-center gap-4">
-                  <span className="grid h-12 w-12 place-items-center rounded-full border border-[var(--color-line-strong)] bg-[var(--color-canvas)] text-[var(--color-champagne)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.6),0_0_30px_-12px_rgba(215,181,109,0.4)]">
-                    <Icon size={17} strokeWidth={1.6} />
-                  </span>
-                  <span className="font-display text-[14px] text-[var(--color-ink-dim)]">
-                    Phase 0{i + 1}
-                  </span>
-                </div>
+    const mm = gsap.matchMedia();
+    mm.add(
+      { wide: "(min-width: 820px)", reduce: "(prefers-reduced-motion: reduce)" },
+      (ctx) => {
+        const { wide, reduce } = ctx.conditions as { wide: boolean; reduce: boolean };
+        if (reduce) return;
+        const panels = gsap.utils.toArray<HTMLElement>(".process__panel", track);
 
-                <h3 className="font-display text-[22px] font-normal tracking-tight text-[var(--color-ink)]">
-                  {step.title}
-                </h3>
-                <p className="mt-2 text-[14px] leading-[1.65] text-[var(--color-ink-muted)]">
-                  {step.copy}
-                </p>
-
-                <ul className="mt-5 flex flex-wrap gap-1.5">
-                  {step.deliverables.map((d) => (
-                    <li
-                      key={d}
-                      className="rounded-full border border-[var(--color-line)] px-2.5 py-1 text-[11px] tracking-wide text-[var(--color-ink-muted)]"
-                    >
-                      {d}
-                    </li>
-                  ))}
-                </ul>
-              </motion.li>
+        if (wide) {
+          const distance = () => track.scrollWidth - window.innerWidth;
+          const tween = gsap.to(track, {
+            x: () => -distance(),
+            ease: "none",
+            scrollTrigger: {
+              trigger: pin,
+              pin: true,
+              start: "center center",
+              scrub: 1,
+              end: () => `+=${Math.round(distance() * 0.6)}`, // shorter scroll per panel, still scrubbed
+              invalidateOnRefresh: true,
+              anticipatePin: 1,
+            },
+          });
+          panels.forEach((panel) => {
+            gsap.from(panel.querySelectorAll(".word"), {
+              opacity: 0,
+              yPercent: 110,
+              duration: 0.6,
+              ease: "power3.out",
+              stagger: 0.03,
+              scrollTrigger: { trigger: panel, containerAnimation: tween, start: "left 70%" },
+            });
+            // background drifts slower than the panel and settles from a soft zoom
+            gsap.fromTo(
+              panel.querySelector(".process__bg"),
+              { xPercent: -10, scale: 1.18 },
+              {
+                xPercent: 10,
+                scale: 1,
+                ease: "none",
+                scrollTrigger: { trigger: panel, containerAnimation: tween, start: "left right", end: "right left", scrub: true },
+              },
             );
-          })}
-        </ol>
+          });
+        } else {
+          panels.forEach((panel) => {
+            gsap.from(panel.querySelectorAll(".word"), {
+              opacity: 0,
+              yPercent: 60,
+              duration: 0.5,
+              ease: "power3.out",
+              stagger: 0.02,
+              scrollTrigger: { trigger: panel, start: "top 75%" },
+            });
+            gsap.fromTo(
+              panel.querySelector(".process__bg"),
+              { yPercent: -8, scale: 1.12 },
+              { yPercent: 8, scale: 1, ease: "none", scrollTrigger: { trigger: panel, start: "top bottom", end: "bottom top", scrub: true } },
+            );
+          });
+        }
+      },
+    );
+    return () => mm.revert();
+  }, []);
+
+  return (
+    <section className="process" id="process" aria-labelledby="processHeading">
+      <h2 className="sr-only" id="processHeading">
+        How working together goes
+      </h2>
+      <div className="process__pin" ref={pinRef}>
+        <div className="process__track" ref={trackRef}>
+          {process.map((p) => (
+            <article className="process__panel" key={p.step}>
+              <div className="process__bg" aria-hidden>
+                <Image src={p.image} alt={p.imageAlt} fill sizes="100vw" loading="eager" />
+              </div>
+              <div className="process__panel-inner">
+                <p className="process__step" aria-hidden>
+                  {p.step}
+                </p>
+                <div>
+                  <p className="eyebrow">{p.when}</p>
+                  <h3 style={{ marginTop: "1rem" }}>
+                    <Words text={p.title} />
+                  </h3>
+                  <p className="lede">
+                    <Words text={p.lede} />
+                  </p>
+                  <ul className="process__deliver">
+                    {p.deliverables.map((d) => (
+                      <li key={d}>{d}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );
