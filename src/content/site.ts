@@ -150,6 +150,21 @@ export const projects = [
     ],
   },
   {
+    title: "Infinia Yachts",
+    url: "https://infiniayachts.com/",
+    tag: "Yacht charter · real-time Dubai booking platform",
+    stack: "Next.js + Supabase",
+    image: "/work/infiniayachts.png",
+    alt: "Infinia Yachts homepage with live yacht search for Dubai charters",
+    summary:
+      "A luxury yacht rental platform for Dubai with live availability, transparent pricing, online booking, yacht listings, packages, water sports and SEO-led service pages.",
+    points: [
+      ["Live yacht search", "date, duration, time and guest controls built around instant availability"],
+      ["Verified fleet pages", "yacht cards with pricing, capacity, specs, booking CTAs and WhatsApp support"],
+      ["SEO growth structure", "service, package and destination pages targeting high-intent yacht-rental searches"],
+    ],
+  },
+  {
     title: "Patriot Family Insurance",
     url: "https://patriotfamilyinsurance.com/",
     tag: "Insurance · lead-gen site with instant quotes",
