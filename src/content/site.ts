@@ -27,9 +27,9 @@ export const site = {
   heroWords: ["websites", "web apps", "mobile apps", "stores", "SaaS"],
   /** Centered heading — keep these the same length so the morph cell doesn't leave gaps. */
   contactWords: ["great", "solid", "yours"],
-  /** Replace with your own photo: drop a 4:5 image and set the path here. */
-  portrait: unsplash("photo-1507003211169-0a1dd7228f2d", 800, 1000),
-  portraitAlt: "Anshul Mankotia, full stack developer based in Dharamshala",
+  /** 4:5 avatar in /public (3D cartoon of Anshul). Swap the file to change it. */
+  portrait: "/anshul-avatar.jpg",
+  portraitAlt: "3D cartoon avatar of Anshul Mankotia in a pink blazer",
 };
 
 export const services = [

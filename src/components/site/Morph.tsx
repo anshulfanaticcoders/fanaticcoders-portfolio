@@ -30,6 +30,8 @@ export function Morph({
       const cur = spans[i];
       i = (i + 1) % spans.length;
       const next = spans[i];
+      // self-heal: anything that is neither leaving nor entering must be hidden
+      spans.forEach((s) => s !== cur && s !== next && gsap.set(s, { opacity: 0 }));
       gsap.to(cur, { opacity: 0, yPercent: -35, filter: "blur(12px)", duration: 0.5, ease: "power2.in" });
       gsap.fromTo(
         next,

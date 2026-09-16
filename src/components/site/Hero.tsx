@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import { BriefcaseBusiness, MapPin, Zap } from "lucide-react";
 import { gsap, prefersReducedMotion } from "@/lib/gsap";
 import { site } from "@/content/site";
@@ -21,8 +22,27 @@ export function Hero() {
       drift(".blob--c", 8, -12, 16);
 
       gsap.from(".hero__inner > *", { opacity: 0, y: 28, duration: 0.9, ease: "power3.out", stagger: 0.09, delay: 0.1 });
+      gsap.from(".hero__figure", { opacity: 0, x: 40, duration: 1.4, ease: "power3.out", delay: 0.4 });
     }, el);
-    return () => ctx.revert();
+
+    // light cursor tilt on the avatar (pointer devices only)
+    const figure = el.querySelector<HTMLElement>(".hero__figure img");
+    let onMove: ((e: PointerEvent) => void) | null = null;
+    if (figure && !window.matchMedia("(hover: none)").matches) {
+      const xTo = gsap.quickTo(figure, "x", { duration: 0.9, ease: "power3" });
+      const yTo = gsap.quickTo(figure, "y", { duration: 0.9, ease: "power3" });
+      onMove = (e) => {
+        const nx = e.clientX / window.innerWidth - 0.5;
+        const ny = e.clientY / window.innerHeight - 0.5;
+        xTo(nx * 18);
+        yTo(ny * 12);
+      };
+      el.addEventListener("pointermove", onMove);
+    }
+    return () => {
+      ctx.revert();
+      if (onMove) el.removeEventListener("pointermove", onMove);
+    };
   }, []);
 
   return (
@@ -31,6 +51,10 @@ export function Hero() {
         <span className="blob blob--a" />
         <span className="blob blob--b" />
         <span className="blob blob--c" />
+      </div>
+
+      <div className="hero__figure" aria-hidden>
+        <Image src="/anshul-hero.jpg" alt="" width={1100} height={1604} priority />
       </div>
 
       <div className="wrap hero__inner">
